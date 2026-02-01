@@ -3,6 +3,7 @@ package com.example.userservice;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.ObjectMapper;
 
 @Service
 @RequiredArgsConstructor
@@ -16,7 +17,14 @@ public class UserService {
                 signUpRequestDto.getName(),
                 signUpRequestDto.getPassword());
 
-        userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        UserSignedUpEvent userSignedUpEvent = new UserSignedUpEvent(savedUser.getId(), savedUser.getEmail(), savedUser.getName());
+        kafkaTemplate.send("user.signed-up", toJsonString(userSignedUpEvent));
+    }
+
+    private String toJsonString(Object object){
+        ObjectMapper objectMapper = new ObjectMapper();
+        return objectMapper.writeValueAsString(object);
     }
 
 }
